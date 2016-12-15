@@ -37,6 +37,12 @@ syscall_07:
 	.long 0xe60000f0
 	bx lr
 
+	.global syscall_08
+	.type   syscall_08 STT_FUNC
+syscall_08:
+	.long 0xe6000110
+	bx lr
+
 	.global syscall_09
 	.type   syscall_09 STT_FUNC
 syscall_09:
@@ -79,6 +85,12 @@ TimerDestroy:
 	.long 0xe6000290
 	bx lr
 
+	.global syscall_15
+	.type   syscall_15 STT_FUNC
+syscall_15:
+	.long 0xe60002b0
+	bx lr
+	
 	.global syscall_18
 	.type   syscall_18 STT_FUNC
 syscall_18:
@@ -243,6 +255,12 @@ syscall_54:
 	
 	.global VirtualToPhysical
 	.type   VirtualToPhysical STT_FUNC
+syscall_55:
+	.long 0xe6000ab0
+	bx lr
+
+	.global syscall_55
+	.type   syscall_55 STT_FUNC
 VirtualToPhysical:
 	.long 0xe60009f0
 	bx lr

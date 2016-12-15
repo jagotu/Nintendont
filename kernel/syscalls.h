@@ -19,6 +19,9 @@ s32 syscall_05( s32 ThreadID );
 #define thread_yield() syscall_03()
 u32 syscall_03(void);
 
+#define thread_get_priority(a) syscall_08(a)
+int syscall_08( int ThreadID );
+
 #define thread_set_priority(a,b) syscall_09(a,b)
 int syscall_09( int ThreadID, int prio);
 
@@ -34,8 +37,11 @@ int syscall_0d(int queue, struct ipcmessage *message, int flags);
 #define mqueue_recv(a, b, c) syscall_0e(a, b, c)
 int syscall_0e(int queue, struct ipcmessage **message, int flags);
 
-int  TimerCreate(int Time, int Dummy, int MessageQueue, int Message );
+int  TimerCreate(int Time, int RepeatTime, int MessageQueue, int Message );
 void TimerDestroy( int TimerID );
+
+#define time_now() syscall_15()
+u32 syscall_15(void);
 
 #define heap_alloc(a, b) syscall_18(a, b)
 void *syscall_18(int heap, int size);
@@ -101,6 +107,9 @@ void syscall_54( u32 a );
 
 #define LoadPPC( TMD ) syscall_59( TMD )
 s32 syscall_59( u8 *TMD );
+
+#define GetBUSClock() syscall_55()
+s32 syscall_55(void);
 
 #define LoadModule( Path ) syscall_5a( Path )
 s32 syscall_5a( char *Path );

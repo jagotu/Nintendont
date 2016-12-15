@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "GCAM.h"
 #include "TRI.h"
 #include "Patch.h"
+#include "wiiu.h"
 
 #include "diskio.h"
 #include "usbstorage.h"
@@ -85,6 +86,10 @@ int _main( int argc, char *argv[] )
 
 //Early HID for loader
 	HIDInit();
+	if (IsWiiU())
+	{
+		wiiu_i2c_init();
+	}
 
 //Enable DVD Access
 	write32(HW_DIFLAGS, read32(HW_DIFLAGS) & ~DI_DISABLEDVD);
