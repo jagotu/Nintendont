@@ -581,6 +581,7 @@ int main(int argc, char **argv)
 	IOS_IoctlvAsync( fd, 0x1F, 0, 0, &IOCTL_Buf, NULL, NULL );
 	AfterIOSReload( irq_handler, FoundVersion );
 
+	char vals[256];
 	while(1)
 	{
 		VIDEO_WaitVSync();
