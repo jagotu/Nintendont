@@ -28,6 +28,7 @@ static s32 i2c_send(i2c_config conf, u8 something, u8 datalength);
 static s32 i2csCtrlDrvPoll(u8* buffer, u32 length);
 static void i2c_write(i2c_config conf, u8* data, u8 datalength, bool last);
 unsigned short crc16(unsigned char *data_p, unsigned short length);
+static void set_debug(u32 step, u32 last_return_value);
 
 static s32 wiiu_i2c_enable()
 {
@@ -79,35 +80,44 @@ static s32 wiiu_config_init(u8 device, u8 par, u32 baudrate)
 
 s32 wiiu_i2c_init()
 {
-	s32 return_value;
+	s32 return_value = 0;
 	
+	set_debug(0xFFFF, return_value);
 	return_value = wiiu_i2c_enable();
+	set_debug(0xFFFE, return_value);
 	if(return_value < 0)
 		goto CleanUp;
 	
+	
 	return_value = wiiu_config_init(WIIU_DEV_TV, 0, 40000);
+	set_debug(0xFFFD, return_value);
 	if(return_value < 0)
 		goto CleanUp;
 	
 	return_value = wiiu_config_init(WIIU_DEV_DRH, 0, 4000);
+	set_debug(0xFFFC, return_value);
 	if(return_value < 0)
 		goto CleanUp;
 	
 	u32 priority = thread_get_priority(0);
 	DRCRead_thread = thread_create(DRCRead_Proc, NULL, ((u32*)&__gamepad_read_stack_addr), ((u32)(&__gamepad_read_stack_size)) / sizeof(u32), priority, 0);
+	set_debug(0xFFFB, return_value);
 	if(DRCRead_thread < 0)
 		goto CleanUp;
 	
 	DRCRead_heap = (u8*)malloca(32,32);
-	DRCRead_mqueue = mqueue_create(DRCRead_heap, 1);	
+	DRCRead_mqueue = mqueue_create(DRCRead_heap, 1);
+	set_debug(0xFFFA, return_value);	
 	if(DRCRead_mqueue < 0)
 		goto CleanUp;
 	
 	DRCRead_timer = TimerCreate(0, 5000, DRCRead_mqueue, TIMER_MESSAGE);
+	set_debug(0xFFF9, return_value);
 	if(DRCRead_timer < 0)
 		goto CleanUp;
 	
 	return_value = thread_continue(DRCRead_thread);
+	set_debug(0xFFF8, return_value);
 	if(return_value < 0)
 		goto CleanUp;
 	
@@ -139,6 +149,14 @@ u32 i2cmaxlength = 0;
 
 u8 i2cDRCdata[9];
 
+static void set_debug(u32 step, u32 last_return_value)
+{
+	memcpy((void*)0x13006000, &step, 4);
+	memcpy((void*)0x13006004, &last_return_value, 4);
+	sync_after_write((void*)0x13006000, 8);	
+	
+}
+
 static u32 DRCRead_Proc()
 {
 	struct ipcmessage *msg = NULL;
@@ -150,7 +168,9 @@ static u32 DRCRead_Proc()
 	s32 result;
 	while(1)
 	{
+		
 		return_value = mqueue_recv(DRCRead_mqueue, &msg, 0);
+		set_debug(1, return_value);
 		if(return_value < 0)
 			break;
 		
@@ -158,6 +178,7 @@ static u32 DRCRead_Proc()
 		int packetno = 0;
 		while(packetno < 8)
 		{
+			set_debug(2, packetno);
 			u32 bytes_read = i2csCtrlDrvPoll(packetsbuff[packetno].data, sizeof(packetsbuff[packetno].data));
 			
 			if(bytes_read<0)
@@ -189,6 +210,7 @@ static u32 DRCRead_Proc()
 			totallength += packetsbuff[i].datalength;
 			i2cpacketscount++;
 			result = i2cmCtrlDrvWrite(WIIU_DEV_TV, 0x70, packetsbuff[i].data, packetsbuff[i].datalength); //forward to TV
+			set_debug(3, result);
 			if(result<0)
 			{
 				//OHCI1: ERROR %x while forwarding command 0x%02x of size %d to TV
@@ -198,6 +220,7 @@ static u32 DRCRead_Proc()
 			i2c_syncDRH(0);			
 			result = i2cmCtrlDrvWrite(WIIU_DEV_DRH, 0x70, packetsbuff[i].data, packetsbuff[i].datalength);
 			i2c_syncDRH(1);
+			set_debug(4, result);
 			if(result<0)
 			{
 				//OHCI1: ERROR %x while forwarding command 0x%02x of size %d DRH.
@@ -226,7 +249,7 @@ static u32 DRCRead_Proc()
 		i2c_syncDRH(0);
 		result = i2c_read_gamepad_data(i2cDRCdata);
 		i2c_syncDRH(1);
-		
+		set_debug(5, result);
 		//DRCMSGProc(result);
 		i2cDRCreads++;
 		if(result == -20)
@@ -236,6 +259,9 @@ static u32 DRCRead_Proc()
 		{
 			i2cgeneralfails++;
 		}
+			
+		/*memcpy((void*)0x13006000, i2cDRCData, 0x9);
+		sync_after_write((void*)0x13006000, 0x9);*/	
 		
 		if(fatalerror)
 		{
@@ -254,6 +280,8 @@ static u32 DRCRead_Proc()
 			IOS_Close(stm_handle);
 			fatalerror = 1;
 		}
+		
+	
 		
 	}
 	if(return_value < 0)

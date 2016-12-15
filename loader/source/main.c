@@ -583,6 +583,13 @@ int main(int argc, char **argv)
 
 	while(1)
 	{
+		VIDEO_WaitVSync();
+        sprintf(vals,"%08x%08x",
+           *(vu32*)0xD3006000, *(vu32*)0xD3006004);
+        PrintFormat(DEFAULT_SIZE, BLACK, MENU_POS_X, MENU_POS_Y + 20*4, vals);
+        GRRLIB_Render();
+        ClearScreen();
+		
 		DCInvalidateRange( STATUS, 0x20 );
 		if((STATUS_LOADING > 0 || abs(STATUS_LOADING) > 1) && STATUS_LOADING < 20)
 		{
